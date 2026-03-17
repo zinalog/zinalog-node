@@ -1,0 +1,32 @@
+{
+  "name": "zinalog-node",
+  "version": "0.1.2",
+  "description": "ZinaLog Node.js SDK",
+  "license": "ISC",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "build": "tsup src/index.ts --format esm,cjs --dts",
+    "dev": "tsup src/index.ts --format esm,cjs --watch",
+    "test": "node test/test.js"
+  },
+  "devDependencies": {
+    "@types/node": "^25.5.0",
+    "dotenv": "^16.6.1",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
+  }
+}
