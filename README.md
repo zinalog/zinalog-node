@@ -9,10 +9,10 @@ npm install zinalog-node
 ## Usage
 
 ```ts
-import { ZinaLog } from "@zinalog/node";
+import { ZinaLog } from "zinalog-node";
 
 const log = new ZinaLog({
-  apiKey: process.env.ZINALOG_API_KEY,
+  apiKey: "ZINA_LOG_API_KEY",
   endpoint: "https://your-zinalog-instance.com",
   service: "my-app",
 });
