@@ -3,13 +3,13 @@ Node.js SDK for [Zinalog](https://zinalog.com) — send logs from your Node.js a
 ## Installation
 
 ```bash
-npm install zinalog-node
+npm install @zinalog/node
 ```
 
 ## Usage
 
 ```ts
-import { ZinaLog } from "zinalog-node";
+import { ZinaLog } from "@zinalog/node";
 
 const log = new ZinaLog({
   apiKey: "ZINA_LOG_API_KEY",
@@ -21,6 +21,10 @@ log.info("Server started");
 log.warn("High memory usage", { metadata: { mem: "85%" } });
 log.error("Request failed", { stack: err.stack, metadata: { userId: 42 } });
 log.debug("Query executed", { metadata: { duration_ms: 12 } });
+log.error("Grouped payment failure", {
+  service: "billing-worker",
+  fingerprint: "payment-declined",
+});
 ```
 
 ## Options
@@ -29,7 +33,7 @@ log.debug("Query executed", { metadata: { duration_ms: 12 } });
 |---|---|---|---|
 | `apiKey` | `string` | ✅ | Your Zinalog API key |
 | `endpoint` | `string` | ✅ | Base URL of your Zinalog instance |
-| `service` | `string` | — | Service name attached to every log |
+| `service` | `string` | — | Default service name attached to every log |
 | `batchSize` | `number` | — | Flush immediately when queue hits this size (default: `50`) |
 | `flushIntervalMs` | `number` | — | How often the queue is flushed in ms (default: `100`) |
 
@@ -42,7 +46,8 @@ log.debug("Query executed", { metadata: { duration_ms: 12 } });
 | `log.error(msg, opts?)` | `error` |
 | `log.debug(msg, opts?)` | `debug` |
 
-Each method accepts an optional second argument `{ metadata, stack }`.
+Each method accepts an optional second argument `{ metadata, service, stack, fingerprint }`.
+The `fingerprint` field is an optional grouping hint accepted by ZinaLog core.
 
 ## Manual flush
 

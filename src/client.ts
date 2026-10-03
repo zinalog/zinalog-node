@@ -9,17 +9,19 @@ export type ZinaLogOptions = {
 };
 
 export type LogOptions = {
-  metadata?: Record<string, unknown>;
+  metadata?: unknown;
+  service?: string;
   stack?: string;
+  fingerprint?: string;
 };
 
 type LogEntry = {
-  level: string;
+  level: "info" | "warning" | "error" | "debug";
   message: string;
   service?: string;
-  timestamp: string;
-  metadata?: Record<string, unknown>;
+  metadata?: unknown;
   stack?: string;
+  fingerprint?: string;
 };
 
 export class ZinaLog {
@@ -50,14 +52,18 @@ export class ZinaLog {
     this.flushTimer.unref();
   }
 
-  private enqueue(level: string, message: string, options?: LogOptions): void {
+  private enqueue(
+    level: LogEntry["level"],
+    message: string,
+    options?: LogOptions
+  ): void {
     const entry: LogEntry = {
       level,
       message,
-      service: this.service,
-      timestamp: new Date().toISOString(),
+      service: options?.service ?? this.service,
       metadata: options?.metadata,
       stack: options?.stack,
+      fingerprint: options?.fingerprint,
     };
 
     this.queue.push(entry);
@@ -99,6 +105,13 @@ export class ZinaLog {
         }
       })
     );
+  }
+
+  close(): void {
+    if (this.flushTimer) {
+      clearInterval(this.flushTimer);
+      this.flushTimer = null;
+    }
   }
 
   info(message: string, options?: LogOptions): void {

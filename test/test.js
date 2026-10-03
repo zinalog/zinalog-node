@@ -1,27 +1,73 @@
-import "dotenv/config";
+import assert from "node:assert/strict";
+import test from "node:test";
 import { ZinaLog } from "../dist/index.js";
 
-const apiKey = process.env.ZINALOG_API_KEY;
+test("posts logs using the ZinaLog core ingest contract", async () => {
+  const requests = [];
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async (url, init) => {
+    requests.push({ url, init });
+    return new Response(JSON.stringify({ status: "logged" }), { status: 200 });
+  };
 
-if (!apiKey) {
-  throw new Error("Missing ZINALOG_API_KEY environment variable");
-}
+  const log = new ZinaLog({
+    apiKey: "test-key",
+    endpoint: "http://localhost:4000/",
+    service: "api",
+    flushIntervalMs: 60_000,
+  });
 
-const log = new ZinaLog({
-  apiKey,
-  endpoint: process.env.ZINALOG_ENDPOINT ?? "http://localhost:3001",
-  service: "test-app",
+  try {
+    log.error("Payment failed", {
+      metadata: { orderId: 123 },
+      service: "billing",
+      stack: "Error: Payment failed",
+      fingerprint: "payment-failed",
+    });
+    await log.flush();
+  } finally {
+    log.close();
+    globalThis.fetch = originalFetch;
+  }
+
+  assert.equal(requests.length, 1);
+  assert.equal(requests[0].url, "http://localhost:4000/api/logs");
+  assert.deepEqual(requests[0].init.headers, {
+    Authorization: "Bearer test-key",
+    "Content-Type": "application/json",
+  });
+  assert.deepEqual(JSON.parse(requests[0].init.body), {
+    level: "error",
+    message: "Payment failed",
+    service: "billing",
+    metadata: { orderId: 123 },
+    stack: "Error: Payment failed",
+    fingerprint: "payment-failed",
+  });
 });
 
-log.info("SDK working");
-log.error("Something broke", {
-  metadata: { test: true },
-});
-log.debug("Debugging info", {
-  metadata: { debug: true },
-});
-log.warn("This is a warning", {
-  metadata: { warning: true },
-});
+test("does not throw when log delivery fails", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalNodeEnv = process.env.NODE_ENV;
+  process.env.NODE_ENV = "production";
+  globalThis.fetch = async () => new Response(null, { status: 500 });
 
-await log.flush();
+  const log = new ZinaLog({
+    apiKey: "test-key",
+    endpoint: "http://localhost:4000",
+    flushIntervalMs: 60_000,
+  });
+
+  try {
+    log.info("Still safe");
+    await assert.doesNotReject(() => log.flush());
+  } finally {
+    log.close();
+    globalThis.fetch = originalFetch;
+    if (originalNodeEnv === undefined) {
+      delete process.env.NODE_ENV;
+    } else {
+      process.env.NODE_ENV = originalNodeEnv;
+    }
+  }
+});
