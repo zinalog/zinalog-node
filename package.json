@@ -1,5 +1,5 @@
 {
-  "name": "zinalog-node",
+  "name": "@zinalog/node",
   "version": "0.1.3",
   "description": "ZinaLog Node.js SDK",
   "license": "ISC",
